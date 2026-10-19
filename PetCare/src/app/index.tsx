@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { router } from "expo-router";
 
 import { styles } from "../constants/styles";
 
@@ -39,6 +40,10 @@ export default function HomeScreen() {
   const [petName, setPetName] = useState("");
   const [petType, setPetType] = useState("");
   const [petAge, setPetAge] = useState("");
+  const [formError, setFormError] = useState("");
+  const [notice, setNotice] = useState<{ id: number; text: string } | null>(
+    null,
+  );
 
   // ID pet yang sedang diedit
   const [editId, setEditId] = useState<number | null>(null);
@@ -46,9 +51,28 @@ export default function HomeScreen() {
   // ID pet yang ingin dihapus
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => setNotice(null), 2500);
+    return () => clearTimeout(timeoutId);
+  }, [notice]);
+
   // Menyimpan data pet
   const savePet = () => {
-    if (!petName || !petType || !petAge) {
+    const trimmedName = petName.trim();
+    const trimmedType = petType.trim();
+    const age = Number(petAge);
+
+    if (!trimmedName || !trimmedType || !petAge.trim()) {
+      setFormError("Nama, jenis hewan, dan umur wajib diisi.");
+      return;
+    }
+
+    if (!Number.isInteger(age) || age < 0) {
+      setFormError("Umur harus berupa angka bulat minimal 0.");
       return;
     }
 
@@ -58,24 +82,26 @@ export default function HomeScreen() {
         pet.id === editId
           ? {
               ...pet,
-              name: petName,
-              type: petType,
-              age: Number(petAge),
+              name: trimmedName,
+              type: trimmedType,
+              age,
             }
           : pet,
       );
 
       setPets(updatedPets);
+      setNotice({ id: Date.now(), text: `${trimmedName} updated.` });
     } else {
       // Tambah pet baru
       const newPet: Pet = {
         id: pets.length > 0 ? Math.max(...pets.map((pet) => pet.id)) + 1 : 1,
-        name: petName,
-        type: petType,
-        age: Number(petAge),
+        name: trimmedName,
+        type: trimmedType,
+        age,
       };
 
       setPets([...pets, newPet]);
+      setNotice({ id: Date.now(), text: `${trimmedName} added.` });
     }
 
     resetForm();
@@ -106,6 +132,7 @@ export default function HomeScreen() {
   const confirmDelete = () => {
     if (deleteId !== null) {
       setPets(pets.filter((pet) => pet.id !== deleteId));
+      setNotice({ id: Date.now(), text: "Pet deleted." });
       setDeleteId(null);
     }
   };
@@ -116,7 +143,20 @@ export default function HomeScreen() {
     setPetType("");
     setPetAge("");
     setEditId(null);
+    setFormError("");
     setShowForm(false);
+  };
+
+  const openPetDetails = (pet: Pet) => {
+    router.push({
+      pathname: "/pet/[id]",
+      params: {
+        id: String(pet.id),
+        name: pet.name,
+        type: pet.type,
+        age: String(pet.age),
+      },
+    });
   };
 
   // Menampilkan setiap pet
@@ -135,6 +175,13 @@ export default function HomeScreen() {
           <View style={styles.actionRow}>
             <Pressable style={styles.editButton} onPress={() => editPet(pet)}>
               <Text style={styles.editText}>Edit</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.detailButton}
+              onPress={() => openPetDetails(pet)}
+            >
+              <Text style={styles.detailText}>Details</Text>
             </Pressable>
 
             <Pressable
@@ -162,6 +209,12 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>Take care of your lovely pet</Text>
           </View>
         </View>
+
+        {notice && (
+          <Text key={notice.id} style={styles.notice}>
+            {notice.text}
+          </Text>
+        )}
 
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
@@ -218,6 +271,10 @@ export default function HomeScreen() {
               onChangeText={setPetAge}
               keyboardType="numeric"
             />
+
+            {formError ? (
+              <Text style={styles.formError}>{formError}</Text>
+            ) : null}
 
             <Pressable style={styles.saveButton} onPress={savePet}>
               <Text style={styles.buttonText}>
