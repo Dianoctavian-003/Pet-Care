@@ -45,10 +45,8 @@ export default function HomeScreen() {
     null,
   );
 
-  // ID pet yang sedang diedit
   const [editId, setEditId] = useState<number | null>(null);
 
-  // ID pet yang ingin dihapus
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -60,7 +58,6 @@ export default function HomeScreen() {
     return () => clearTimeout(timeoutId);
   }, [notice]);
 
-  // Menyimpan data pet
   const savePet = () => {
     const trimmedName = petName.trim();
     const trimmedType = petType.trim();
@@ -76,7 +73,6 @@ export default function HomeScreen() {
       return;
     }
 
-    // Update pet
     if (editId !== null) {
       const updatedPets = pets.map((pet) =>
         pet.id === editId
@@ -92,7 +88,6 @@ export default function HomeScreen() {
       setPets(updatedPets);
       setNotice({ id: Date.now(), text: `${trimmedName} updated.` });
     } else {
-      // Tambah pet baru
       const newPet: Pet = {
         id: pets.length > 0 ? Math.max(...pets.map((pet) => pet.id)) + 1 : 1,
         name: trimmedName,
@@ -107,7 +102,6 @@ export default function HomeScreen() {
     resetForm();
   };
 
-  // Edit pet
   const editPet = (pet: Pet) => {
     setEditId(pet.id);
 
@@ -118,17 +112,14 @@ export default function HomeScreen() {
     setShowForm(true);
   };
 
-  // Menampilkan konfirmasi delete
   const deletePet = (id: number) => {
     setDeleteId(id);
   };
 
-  // Membatalkan delete
   const cancelDelete = () => {
     setDeleteId(null);
   };
 
-  // Konfirmasi delete
   const confirmDelete = () => {
     if (deleteId !== null) {
       setPets(pets.filter((pet) => pet.id !== deleteId));
@@ -137,7 +128,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Reset form
   const resetForm = () => {
     setPetName("");
     setPetType("");
@@ -159,7 +149,6 @@ export default function HomeScreen() {
     });
   };
 
-  // Menampilkan setiap pet
   const renderPet = (pet: Pet) => {
     return (
       <View key={pet.id} style={styles.petCard}>
